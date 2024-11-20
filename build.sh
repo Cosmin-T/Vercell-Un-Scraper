@@ -5,9 +5,9 @@ set -o errexit
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# Install Playwright with system dependencies
-PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright pip install playwright
-PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install chromium
+# Install Playwright and dependencies
+PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install chromium --with-deps
+playwright install-deps
 
 python manage.py collectstatic --noinput
 python manage.py migrate
