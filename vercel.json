@@ -10,20 +10,8 @@
     }],
     "routes": [
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
-            "src": "/media/(.*)",
-            "dest": "/media/$1"
-        },
-        {
             "src": "/(.*)",
             "dest": "UnScraper_Django/wsgi.py"
         }
-    ],
-    "env": {
-        "PYTHONUNBUFFERED": "1",
-        "DJANGO_SETTINGS_MODULE": "UnScraper_Django.settings"
-    }
+    ]
 }
