@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -o errexit
 
-# Add Debian's testing sources for more up-to-date packages
-echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list
-
-# Install required system dependencies
+# Install required system dependencies without modifying sources
 apt-get update && apt-get install -y \
     gstreamer1.0-libav \
     gstreamer1.0-plugins-base \
