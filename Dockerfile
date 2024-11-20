@@ -15,11 +15,11 @@ RUN pip3 install -r requirements.txt
 COPY . .
 
 # Run migrations and collect static
-RUN python3 manage.py collectstatic --noinput
 RUN python3 manage.py migrate
+RUN python3 manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
 
 # Start command
-CMD ["gunicorn", "UnScraper_Django.wsgi:app", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "UnScraper_Django.wsgi:application", "--bind", "0.0.0.0:$PORT"]
