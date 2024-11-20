@@ -1,13 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -o errexit
 
-# Upgrade pip and install dependencies
-python -m pip install --upgrade pip
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Install Playwright browsers without root
-PLAYWRIGHT_SKIP_BROWSER_GC=1 playwright install chromium --with-deps
+# Install only Chromium browser
+playwright install chromium
 
-# Your Django commands
+# Run Django commands
 python manage.py collectstatic --noinput
 python manage.py migrate
