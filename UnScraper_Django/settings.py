@@ -38,7 +38,8 @@ DEBUG = True
 #     'dunscraper.loca.lt',
 #     'dunscraper.serveo.net',
 # ]
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.vercel.app']
 
 # Add this setting to allow any subdomain
 ALLOW_HOSTS_PATTERN = [
