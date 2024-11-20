@@ -1,26 +1,9 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+FROM mcr.microsoft.com/playwright/python:v1.40.0-focal
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgstreamer1.0-0 \
-    libgstreamer-plugins-base1.0-0 \
-    libgstreamer-plugins-bad1.0-0 \
-    libenchant-2-2 \
-    libsecret-1-0 \
-    libmanette-0.2-0 \
-    libgles2 \
-    libegl1 \
-    libopus0 \
-    libwebp7 \
-    libwebpdemux2 \
-    libwoff1 \
-    && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
 WORKDIR /app
@@ -30,10 +13,6 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Playwright
-RUN playwright install chromium \
-    && playwright install-deps
 
 # Copy project
 COPY . .
