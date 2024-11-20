@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UnScraper</title>
+    <style>
+        /* Font imports */
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        /* Web Background Styles */
+        .web-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(240,240,240,0.8) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(230,230,230,0.8) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(245,245,245,0.8) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(235,235,235,0.8) 0%, transparent 50%),
+                linear-gradient(45deg, #ffffff 0%, #f8f8f8 100%);
+        }
+        .api-selection-container {
+            margin: 20px 0;
+        }
+
+        .api-tabs {
+            display: inline-flex; /* Changed from flex to inline-flex */
+            background: #f5f5f5;
+            position: relative;
+            min-height: 24px; /* Reduced from 30px */
+            border-radius: 8px; /* Added border-radius */
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: auto; /* Changed from 100% */
+        }
+        .error-banner {
+            background-color: #FEE2E2;
+            border: 1px solid #F87171;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error-banner .error-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            color: #DC2626;
+        }
+
+        .error-content {
+            flex-grow: 1;
+        }
+
+        .error-title {
+            color: #991B1B;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .error-message {
+            color: #7F1D1D;
+            font-size: 14px;
+        }
+        .api-tab {
+            font-family: 'IBM Plex Sans', sans-serif;
+            padding: 8px 16px; /* Reduced padding */
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 1;
+            font-size: 14px; /* Reduced font size */
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .api-tab.active {
+            color: white;
+            font-weight: 600;
+        }
+
+        .api-tab-slider {
+            position: absolute;
+            height: 100%;
+            background: black;
+            transition: all 0.3s ease;
+            z-index: 0;
+        }
+
+        .api-content {
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.099) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.099) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: moveGrid 15s linear infinite;
+        }
+
+        .floating-dots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes moveGrid {
+            95% {
+                transform: translateX(0px) translateY(0px);
+            }
+            100% {
+                transform: translateX(0px) translateY(0px);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+            }
+            50% {
+                transform: translateY(20px) translateX(10px);
+            }
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            transition: all 0.3s ease;
+            background: transparent; /* Remove the background */
+            backdrop-filter: none; /* Remove the blur effect */
+        }
+
+        .web-line {
+            position: absolute;
+            background: black;
+            z-index: 500;
+            width: 1px;
+            height: 30px;
+            opacity: 0.2;
+        }
+        @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(10px);
+        }
+        }
+        * {
+            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+            background-color: white;
+            color: black;
+            min-height: 100vh;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .top-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .top-controls > * {
+            pointer-events: auto;
+        }
+        .buy-coffee-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .buy-coffee-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .wide-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            transition: all 0.3s ease;
+        }
+        /* Set width of the page to 100% for wide mode */
+        .container.wide {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 0 5%;
+        }
+
+        /* For medium and larger screens */
+        @media (min-width: 1400px) {
+            .container.wide {
+                padding: 0 10%;
+            }
+        }
+
+        /* For large screens */
+        @media (min-width: 1800px) {
+            .container.wide {
+                padding: 0 15%;
+            }
+        }
+        .header {
+            text-align: center;
+            margin: 48px 0;
+            padding: 32px;
+            background-color: rgba(0, 0, 0, 0.85); /* Slightly transparent black */
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .header h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 48px;
+            position: relative;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .header h1::before {
+            content: 'UnScraper';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            color: transparent;
+            background: linear-gradient(45deg, #fff 40%, #666 50%, #fff 60%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+        .notice-box {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background-color: rgba(0, 0, 0, 0);
+            border: 1px solid rgba(255, 255, 255, 0);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            transition: all 0.3s ease;
+            color: transparent;
+            position: relative;
+            z-index: 10;
+            height: 200px; /* Half height when not hovered */
+            overflow: hidden;
+        }
+
+        .notice-box:hover {
+            background-color: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+            color: white;
+            height: 660px; /* Increased height to show all content */
+        }
+
+        /* Keep all other styles exactly the same */
+        .notice-box * {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .notice-box:hover * {
+            opacity: 1;
+        }
+
+        .notice-box h3 {
+            color: transparent;
+            margin-bottom: 16px;
+            font-size: 18px;
+            transition: color 0.3s ease;
+        }
+
+        .notice-box:hover h3 {
+            color: #ff4d4d;
+        }
+
+        .notice-box ul {
+            list-style-position: inside;
+            margin: 12px 0;
+        }
+
+        .notice-box li {
+            margin: 8px 0;
+            color: transparent;
+            transition: color 0.3s ease;
+        }
+
+        .notice-box:hover li {
+            color: #999;
+        }
+
+        .notice-box strong {
+            color: transparent;
+            transition: color 0.3s ease;
+        }
+
+        .notice-box:hover strong {
+            color: #fff;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: black;
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+        .tab-container {
+            margin: 20px 0;
+            border: 1px solid rgba(221, 221, 221, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0);
+            backdrop-filter: blur(5px);
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            position: relative;
+            min-height: 30px;
+            width: 100%;
+        }
+
+        .tab {
+            font-family: 'IBM Plex Sans', sans-serif;
+            padding: 16px 32px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            flex: 1;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 1;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .tab.active {
+            color: white;
+            font-weight: 600;
+        }
+        .tab-slider {
+            position: absolute;
+            height: 100%;
+            background: black;
+            transition: all 0.3s ease;
+            z-index: 0;
+        }
+        .tab-content {
+            display: none;
+            padding: 32px;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .tab-content.active {
+            display: block;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .input-group {
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .input-group:last-of-type {
+            margin-bottom: 40px;
+        }
+        .input-label {
+            font-family: 'IBM Plex Sans', sans-serif;
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #000;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        .input-field {
+            font-family: 'IBM Plex Sans', sans-serif;
+            width: 100%;
+            padding: 16px;
+            border: 1px solid rgba(221, 221, 221, 0.5);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background-color: rgba(250, 250, 250, 0.9);
+        }
+        .input-field:focus {
+            border-color: black;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+        .input-field.disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .submit-btn {
+            font-family: 'IBM Plex Sans', sans-serif;
+            width: 100%;
+            padding: 16px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            letter-spacing: 0.3px;
+        }
+
+        .submit-btn:hover {
+            background-color: #333;
+            transform: translateY(-1px);
+        }
+        .submit-btn:active {
+            transform: translateY(1px);
+        }
+        .error {
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #d32f2f;
+            background-color: #fff3f3;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            animation: shake 0.5s ease-in-out;
+        }
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid rgba(221, 221, 221, 0.3);
+            border-radius: 12px;
+            margin-top: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .container.wide .table-container {
+            backdrop-filter: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 600px;
+        }
+        th {
+            background-color: black;
+            color: white;
+            padding: 16px;
+            text-align: left;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+        th:first-child {
+            border-top-left-radius: 12px;
+        }
+        th:last-child {
+            border-top-right-radius: 12px;
+        }
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #ddd;
+            transition: background-color 0.2s;
+        }
+        tr {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+            transform: translateX(4px);
+        }
+        .results-info {
+            margin-bottom: 24px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .download-icons {
+            display: flex;
+            gap: 16px;
+        }
+        .download-icon {
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+        }
+        .download-icon:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        .download-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+        .form-container {
+            position: relative;
+        }
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            backdrop-filter: blur(2px);
+            background: transparent;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            border-radius: 12px;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid black;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .loading-text {
+            color: black;
+            font-size: 14px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .footer {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            font-size: 14px;
+            color: #333;
+            z-index: 1000;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .popup-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #000;
+        }
+
+        .popup-message {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            color: #666;
+        }
+
+        .popup-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .visualization-container {
+            padding: 20px 0;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+        }
+
+        .drop-zone.drag-over {
+            border-color: black;
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.02);
+        }
+
+        .drop-zone-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            color: #666;
+        }
+
+        .drop-zone-content svg {
+            color: #999;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover .drop-zone-content svg {
+            color: black;
+            transform: translateY(-4px);
+        }
+
+        .drop-text {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .visualization-area {
+            margin-top: 20px;
+            min-height: 500px;
+        }
+        .page-count-group {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .slider-container {
+            position: relative;
+            padding: 15px 0;
+            margin-top: 10px;
+        }
+
+        .page-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e5e7eb;
+            outline: none;
+            border-radius: 3px;
+            margin: 10px 0;
+        }
+
+        .page-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: black;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: black;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .page-slider::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .slider-value {
+            position: absolute;
+            top: -5px;
+            left: 0;
+            transform: translateX(-50%);
+            background: black;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .slider-value.active {
+            opacity: 1;
+        }
+
+        .usage-indicator {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .usage-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 16px;
+            font-size: 13px;
+            color: #6b7280;
+            transition: all 0.3s ease;
+        }
+
+        .usage-pill.warning {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .usage-pill.danger {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .page-text {
+            transition: all 0.3s ease;
+        }
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(-2deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="web-background">
+        <div class="grid-overlay"></div>
+        <div class="floating-dots" id="floatingDots"></div>
+    </div>
+    <div class="top-controls">
+        <a href="https://revolut.me/cosminhbs7" target="_blank" class="buy-coffee-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2 21h18v-2H2v2zM20 8h-2V5h2v3zm0-5H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-4 12c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V3h10v12z"/>
+            </svg>
+            Buy me a coffee
+        </a>
+        <div class="wide-mode-toggle">
+            <span>Wide Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="wideMode">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>UnScraper</h1>
+        </div>
+
+        <div class="notice-box">
+            <p><strong>UnScrape</strong> uses AI to scrape any accessible website, extracting valuable data without the need for manual intervention. This tool is designed to gather information from publicly available web content.</p>
+
+            <br>
+
+            <p><strong>What UnScraper Can Do:</strong></p>
+            <ul>
+                <li>Scrape publicly accessible websites</li>
+                <li>Automatically identify and extract useful data points</li>
+                <li>Efficiently handle complex page structures and elements</li>
+                <li>Provide results quickly and with minimal configuration</li>
+            </ul>
+
+            <br>
+
+            <p><strong>Limitations:</strong></p>
+            <ul>
+                <li>UnScraper is not designed to scrape websites that require user authentication or sessions.</li>
+            </ul>
+
+            <br>
+
+            <p><strong>Examples of incompatible websites:</strong></p>
+            <ul>
+                <li>Some e-commerce sites</li>
+                <li>Some social media platforms</li>
+                <li>Online banking and payment gateways</li>
+                <li>Websites with restricted content access or advanced captcha verification</li>
+            </ul>
+
+            <br>
+
+            <p><strong>Alternatives for scraping these websites:</strong></p>
+            <ul>
+                <li>Use automation frameworks like Selenium, Playwright or Puppeteer</li>
+                <li>Utilize browser emulators</li>
+                <li>Leverage APIs or other developer tools</li>
+            </ul>
+        </div>
+
+
+        <form method="post" action="{% url 'index' %}" id="scrapeForm" class="form-container">
+            <div id="errorContainer" style="display: none;" class="error-banner">
+                <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div class="error-content">
+                    <div class="error-title">Error</div>
+                    <div class="error-message"></div>
+                </div>
+            </div>
+            <div class="loading-overlay">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Scraping data...</div>
+                </div>
+            </div>
+
+            {% csrf_token %}
+
+            <div class="api-selection-container">
+                <label class="input-label">Groq API Key Selection</label>
+                <div class="api-tabs">
+                    <button type="button" class="api-tab active" data-api="default">Default API</button>
+                    <button type="button" class="api-tab" data-api="custom">Custom API</button>
+                    <div class="api-tab-slider"></div>
+                </div>
+
+                <div class="api-content">
+                    <input type="hidden" id="groq_api_key" name="groq_api_key" value="{{ default_api_key }}">
+                    <div id="custom-api-input" style="display: none;">
+                        <div class="input-group" style="margin: 20px;">
+                            <label class="input-label" for="custom_groq_api_key">Your Groq API Key</label>
+                            <input
+                                type="password"
+                                class="input-field"
+                                id="custom_groq_api_key"
+                                placeholder="Enter your Groq API key"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-container">
+                <div class="tabs">
+                    <button type="button" class="tab {% if not show_results %}active{% endif %}" data-tab="input">Input</button>
+                    <button type="button" class="tab {% if show_results %}active{% endif %}" data-tab="result">Result</button>
+                    <button type="button" class="tab" data-tab="visualize">Visualize</button>
+                    <div class="tab-slider"></div>
+                </div>
+
+                <div id="input-tab" class="tab-content {% if not show_results %}active{% endif %}">
+                    <div class="input-group">
+                        <label class="input-label" for="url">URL to Scrape</label>
+                        <input type="url" class="input-field" name="url" id="url"
+                               placeholder="e.g., https://webscraper.io/test-sites/e-commerce/scroll/phones/touch" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label" for="fields">Fields (separated by commas)</label>
+                        <input type="text" class="input-field" name="fields" id="fields"
+                               placeholder="e.g., title, price, description" required>
+                    </div>
+
+                    <div class="input-group page-count-group">
+                        <label class="input-label" for="page_count">Number of Pages to Scrape</label>
+                        <div class="slider-container">
+                            <input type="range" class="page-slider" name="page_count" id="page_count"
+                                   min="1" max="5" value="1" step="1">
+                            <div class="slider-value">
+                                <span id="pageCountValue">1</span>
+                                <span class="page-text">page</span>
+                            </div>
+                            <div class="usage-indicator">
+                                <div class="usage-pill">
+                                    <svg class="usage-icon" viewBox="0 0 24 24" width="14" height="14">
+                                        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                                    </svg>
+                                    <span id="usageCost">Uses 1 trial credit</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">Scrape</button>
+                </div>
+
+                <div id="result-tab" class="tab-content {% if show_results %}active{% endif %}">
+                    {% if rows %}
+                        <div class="results-info">
+                            <span>Found {{ rows|length }} items</span>
+                            <div class="download-icons">
+                                <button class="download-icon" id="downloadCsv" title="Download CSV">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </button>
+                                <button class="download-icon" id="downloadJson" title="Download JSON">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        {% for key in rows.0.keys %}
+                                            <th>{{ key|title }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in rows %}
+                                        <tr>
+                                            {% for value in row.values %}
+                                                <td>{{ value }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div id="results-placeholder">
+                            {% if error %}
+                                <div class="error">{{ error }}</div>
+                            {% else %}
+                                No items found, please input your query.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div id="visualize-tab" class="tab-content">
+                    <div class="visualization-container">
+                        <div class="drop-zone" id="dropZone">
+                            <div class="drop-zone-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <p class="drop-text">Drag & drop your CSV, XLSX or JSON file here<br>or click to browse</p>
+                                <input type="file" id="fileInput" accept=".csv,.json" class="file-input" />
+                            </div>
+                        </div>
+                        <div id="visualizationArea" class="visualization-area"></div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <div class="footer">
+        © 2024 Developed by CosminT. All rights reserved
+    </div>
+
+    <script>
+        const pageSlider = document.getElementById('page_count');
+        const pageCountValue = document.getElementById('pageCountValue');
+        const pageText = document.querySelector('.page-text');
+        const usageCost = document.getElementById('usageCost');
+        const usagePill = document.querySelector('.usage-pill');
+
+        if (pageSlider && pageCountValue && usageCost) {
+            const updateSliderValue = () => {
+                const value = pageSlider.value;
+                const percent = ((value - pageSlider.min) / (pageSlider.max - pageSlider.min)) * 100;
+                pageCountValue.textContent = value;
+                pageText.textContent = value > 1 ? 'pages' : 'page';
+
+                // Update slider thumb position
+                pageCountValue.parentElement.style.left = `${percent}%`;
+                pageCountValue.parentElement.classList.add('active');
+
+                // Calculate and display usage cost
+                let usageText = 'Uses 1 trial credit';
+                usagePill.className = 'usage-pill';
+
+                if (value >= 5) {
+                    usageText = 'Uses 3 trial credits';
+                    usagePill.classList.add('danger');
+                } else if (value > 3) {
+                    usageText = 'Uses 2 trial credits';
+                    usagePill.classList.add('warning');
+                }
+
+                usageCost.textContent = usageText;
+
+                // Update slider background
+                pageSlider.style.background = `linear-gradient(to right, black ${percent}%, #e5e7eb ${percent}%)`;
+            };
+
+            pageSlider.addEventListener('input', updateSliderValue);
+            pageSlider.addEventListener('change', updateSliderValue);
+
+            // Initial update
+            updateSliderValue();
+
+            // Hide the value tooltip when not interacting
+            pageSlider.addEventListener('mouseup', () => {
+                setTimeout(() => {
+                    pageCountValue.parentElement.classList.remove('active');
+                }, 1000);
+            });
+
+            pageSlider.addEventListener('mouseover', () => {
+                pageCountValue.parentElement.classList.add('active');
+            });
+
+            pageSlider.addEventListener('mouseout', () => {
+                if (!pageSlider.matches(':active')) {
+                    pageCountValue.parentElement.classList.remove('active');
+                }
+            });
+        }
+
+        function initializeVisualization() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const visualizationArea = document.getElementById('visualizationArea');
+            let isDialogOpen = false;  // Track if file dialog is open
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('drag-over');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            // Modified click handler with dialog tracking
+            dropZone.addEventListener('click', () => {
+                if (!isDialogOpen) {
+                    isDialogOpen = true;
+                    fileInput.click();
+                }
+            });
+
+            // Track when the file dialog is closed
+            window.addEventListener('focus', () => {
+                setTimeout(() => {
+                    isDialogOpen = false;
+                }, 300);
+            }, true);
+
+            fileInput.addEventListener('change', handleFileSelect);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            }
+
+            function handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            }
+
+            function handleFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                // Show loading state
+                visualizationArea.innerHTML = '<div class="loading-spinner"></div>';
+
+                fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        visualizationArea.innerHTML = data.html;
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    visualizationArea.innerHTML = `
+                        <div class="error-banner">
+                            <div class="error-content">
+                                <div class="error-title">Error</div>
+                                <div class="error-message">${error.message}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Reset the file input to allow selecting the same file again
+                fileInput.value = '';
+            }
+        }
+
+        // Initialize visualization when switching to the tab
+        document.querySelector('.tab[data-tab="visualize"]').addEventListener('click', () => {
+            setTimeout(initializeVisualization, 100);
+        });
+
+        function initializeApiTabs() {
+            const apiTabs = document.querySelectorAll('.api-tab');
+            const apiSlider = document.querySelector('.api-tab-slider');
+            const customApiInput = document.getElementById('custom-api-input');
+            const hiddenApiKey = document.getElementById('groq_api_key');
+            const customApiKey = document.getElementById('custom_groq_api_key');
+
+            function updateApiTabSlider() {
+                const activeTab = document.querySelector('.api-tab.active');
+                const tabsContainer = document.querySelector('.api-tabs');
+
+                if (activeTab && apiSlider && tabsContainer) {
+                    const tabRect = activeTab.getBoundingClientRect();
+                    const containerRect = tabsContainer.getBoundingClientRect();
+
+                    apiSlider.style.width = `${tabRect.width}px`;
+                    apiSlider.style.left = `${tabRect.left - containerRect.left}px`;
+                }
+            }
+
+            function handleApiSelection(tab) {
+                apiTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const isCustom = tab.dataset.api === 'custom';
+                customApiInput.style.display = isCustom ? 'block' : 'none';
+                hiddenApiKey.value = isCustom ? customApiKey.value : document.getElementById('groq_api_key').value;
+
+                // Cache the selection
+                localStorage.setItem('apiKeyChoice', isCustom ? 'custom' : 'default');
+                if (isCustom && customApiKey.value) {
+                    localStorage.setItem('customGroqKey', customApiKey.value);
+                }
+
+                updateApiTabSlider();
+            }
+
+            apiTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    handleApiSelection(this);
+                });
+            });
+
+            customApiKey?.addEventListener('input', function(e) {
+                if (document.querySelector('.api-tab[data-api="custom"]').classList.contains('active')) {
+                    hiddenApiKey.value = e.target.value;
+                    localStorage.setItem('customGroqKey', e.target.value);
+                }
+            });
+
+            // Restore cached selections
+            const lastApiChoice = localStorage.getItem('apiKeyChoice');
+            const lastCustomKey = localStorage.getItem('customGroqKey');
+
+            if (lastApiChoice === 'custom') {
+                const customTab = document.querySelector('.api-tab[data-api="custom"]');
+                if (customTab) {
+                    handleApiSelection(customTab);
+                    if (lastCustomKey) {
+                        customApiKey.value = lastCustomKey;
+                        hiddenApiKey.value = lastCustomKey;
+                    }
+                }
+            }
+
+            // Initialize slider position
+            updateApiTabSlider();
+
+            // Update on window resize
+            window.addEventListener('resize', updateApiTabSlider);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeApiTabs);
+        window.addEventListener('load', initializeApiTabs);
+
+        // Create floating dots
+        const dotsContainer = document.getElementById('floatingDots');
+        const numberOfDots = 100;
+
+        for (let i = 0; i < numberOfDots; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            dot.style.left = `${Math.random() * 100}%`;
+            dot.style.top = `${Math.random() * 100}%`;
+            dot.style.animationDelay = `${Math.random() * 8}s`;
+            dotsContainer.appendChild(dot);
+        }
+
+        // Web Background Creation
+        function createWebBackground() {
+            const container = document.querySelector('.web-background');
+
+            if (!container) {
+                console.error('Container not found!');
+                return;
+            }
+
+            const config = {
+                numberOfLines: 250,
+                baseRadius: { min: 50, max: 350 },
+                segmentLength: { min: 15, max: 60 },
+                opacity: { min: 0.05, max: 0.2 },
+                rotationSpeed: { min: 0.03, max: 0.08 },
+                patterns: [
+                    // */-  pattern
+                    [
+                        { x: 0, y: 0, angle: 0 },
+                        { x: 1, y: 0, angle: 45 },
+                        { x: 1, y: 0, angle: -45 }
+                    ],
+                    // \_  pattern
+                    [
+                        { x: 0, y: 0, angle: -45 },
+                        { x: 1, y: 1, angle: 0 }
+                    ],
+                    // /*  pattern
+                    [
+                        { x: 0, y: 0, angle: 45 },
+                        { x: 1, y: -1, angle: -45 }
+                    ],
+                    // Z pattern
+                    [
+                        { x: 0, y: 0, angle: 0 },
+                        { x: 1, y: 1, angle: -45 },
+                        { x: 1, y: 1, angle: 0 }
+                    ],
+                    // L pattern
+                    [
+                        { x: 0, y: 0, angle: 90 },
+                        { x: 0, y: 1, angle: 0 }
+                    ],
+                    // C pattern
+                    [
+                        { x: 0, y: 0, angle: -45 },
+                        { x: 1, y: 0, angle: -90 },
+                        { x: 1, y: 1, angle: -135 }
+                    ]
+                ]
+            };
+
+            class GeometricLine {
+                constructor() {
+                    this.segments = [];
+                    this.pattern = config.patterns[Math.floor(Math.random() * config.patterns.length)];
+                    this.baseLength = Math.random() * (config.segmentLength.max - config.segmentLength.min) + config.segmentLength.min;
+                    this.radius = Math.random() * (config.baseRadius.max - config.baseRadius.min) + config.baseRadius.min;
+                    this.angle = Math.random() * 360;
+                    this.centerX = Math.random() * window.innerWidth;
+                    this.centerY = Math.random() * window.innerHeight;
+                    this.rotationSpeed = (Math.random() * (config.rotationSpeed.max - config.rotationSpeed.min) + config.rotationSpeed.min) *
+                                        (Math.random() < 0.5 ? -1 : 1);
+
+                    this.createSegments();
+                }
+
+                createSegments() {
+                    let currentX = 0;
+                    let currentY = 0;
+
+                    this.pattern.forEach((segment, index) => {
+                        const line = document.createElement('div');
+                        line.className = 'web-line';
+
+                        // Base styles
+                        line.style.position = 'absolute';
+                        line.style.width = `${this.baseLength}px`;
+                        line.style.height = '2px';
+                        line.style.background = 'black';
+                        line.style.opacity = Math.random() * (config.opacity.max - config.opacity.min) + config.opacity.min;
+                        line.style.transformOrigin = '0 50%';
+                        line.style.transition = 'opacity 0.3s ease';
+
+                        // Add hover effect
+                        line.addEventListener('mouseover', () => {
+                            line.style.opacity = '0.4';
+                        });
+                        line.addEventListener('mouseout', () => {
+                            line.style.opacity = Math.random() * (config.opacity.max - config.opacity.min) + config.opacity.min;
+                        });
+
+                        this.segments.push({
+                            element: line,
+                            offsetX: currentX,
+                            offsetY: currentY,
+                            baseAngle: segment.angle
+                        });
+
+                        container.appendChild(line);
+
+                        // Update position for next segment
+                        currentX += Math.cos(segment.angle * Math.PI / 180) * this.baseLength;
+                        currentY += Math.sin(segment.angle * Math.PI / 180) * this.baseLength;
+                    });
+                }
+
+                animate() {
+                    const baseX = this.centerX + this.radius * Math.cos(this.angle * Math.PI / 180);
+                    const baseY = this.centerY + this.radius * Math.sin(this.angle * Math.PI / 180);
+
+                    this.segments.forEach(segment => {
+                        const totalAngle = (this.angle + segment.baseAngle) * Math.PI / 180;
+                        const x = baseX + segment.offsetX;
+                        const y = baseY + segment.offsetY;
+
+                        segment.element.style.left = `${x}px`;
+                        segment.element.style.top = `${y}px`;
+                        segment.element.style.transform = `rotate(${this.angle + segment.baseAngle}deg)`;
+                    });
+
+                    this.angle += this.rotationSpeed;
+                    requestAnimationFrame(() => this.animate());
+                }
+            }
+
+            // Create and animate lines
+            const lines = [];
+            for (let i = 0; i < config.numberOfLines; i++) {
+                const line = new GeometricLine();
+                lines.push(line);
+                line.animate();
+            }
+
+            // Cleanup and recreate on resize
+            window.addEventListener('resize', () => {
+                container.innerHTML = '';
+                createWebBackground();
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', createWebBackground);
+        window.addEventListener('load', createWebBackground);
+
+        // Tab slider positioning
+        function updateTabSlider() {
+            const activeTab = document.querySelector('.tab.active');
+            const slider = document.querySelector('.tab-slider');
+            const tabsContainer = document.querySelector('.tabs');
+
+            if (activeTab && slider && tabsContainer) {
+                // Get the exact width and position of the active tab
+                const tabRect = activeTab.getBoundingClientRect();
+                const containerRect = tabsContainer.getBoundingClientRect();
+
+                // Set the slider width to match the active tab
+                slider.style.width = `${tabRect.width}px`;
+
+                // Calculate the left position relative to the container
+                // This is the key fix - we calculate the position from the container's left edge
+                const leftPosition = tabRect.left - containerRect.left;
+                slider.style.left = `${leftPosition}px`;
+
+                // Ensure the slider maintains full height
+                slider.style.height = '100%';
+            }
+        }
+
+
+        // Add event listeners for wide mode toggle and window resize
+        document.getElementById('wideMode').addEventListener('change', function() {
+            // Add a small delay to let the container transition complete
+            setTimeout(updateTabSlider, 300);
+        });
+
+        window.addEventListener('resize', function() {
+            updateTabSlider();
+        });
+
+        // Call updateTabSlider when switching tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+
+                // Update slider after tab switch
+                updateTabSlider();
+            });
+        });
+
+        // Initialize tab slider on page load
+        document.addEventListener('DOMContentLoaded', updateTabSlider);
+        window.addEventListener('load', updateTabSlider);
+
+        // Update after any AJAX content changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length) {
+                    updateTabSlider();
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Download functions
+        function downloadCsv() {
+            const rows = Array.from(document.querySelectorAll('table tr')).slice(1);  // Skip header row
+            const headers = Array.from(document.querySelectorAll('table th')).map(th => th.textContent);
+
+            const data = rows.map(row => {
+                const obj = {};
+                Array.from(row.cells).forEach((cell, index) => {
+                    obj[headers[index]] = cell.textContent;
+                });
+                return obj;
+            });
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('/download/csv/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ rows: data })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'scraping_results.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function downloadJson() {
+            const rows = Array.from(document.querySelectorAll('table tr')).slice(1);  // Skip header row
+            const headers = Array.from(document.querySelectorAll('table th')).map(th => th.textContent);
+
+            const data = rows.map(row => {
+                const obj = {};
+                Array.from(row.cells).forEach((cell, index) => {
+                    obj[headers[index]] = cell.textContent;
+                });
+                return obj;
+            });
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('/download/json/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ rows: data })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'scraping_results.json';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Update the event listeners (make sure these replace your existing download button listeners)
+        document.getElementById('downloadCsv')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            downloadCsv();
+        });
+
+        document.getElementById('downloadJson')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            downloadJson();
+        });
+
+        // Form submission handling
+        const form = document.getElementById('scrapeForm');
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        const submitBtn = document.getElementById('submitBtn');
+        const inputs = document.querySelectorAll('.input-field');
+
+        // Cache form data
+        function cacheFormData() {
+            localStorage.setItem('lastUrl', document.getElementById('url').value);
+            localStorage.setItem('lastFields', document.getElementById('fields').value);
+            localStorage.setItem('wideMode', document.getElementById('wideMode').checked);
+            localStorage.setItem('apiKeyChoice', document.querySelector('input[name="apiKeyChoice"]:checked').value);
+            if (document.querySelector('input[name="apiKeyChoice"]:checked').value === 'custom') {
+                localStorage.setItem('customGroqKey', document.getElementById('custom_groq_api_key').value);
+            }
+            localStorage.setItem('tabState', document.querySelector('.tab.active').dataset.tab);
+        }
+
+        // Restore form data
+        function restoreFormData() {
+            const lastUrl = localStorage.getItem('lastUrl');
+            const lastFields = localStorage.getItem('lastFields');
+            const lastApiChoice = localStorage.getItem('apiKeyChoice');
+            const lastCustomKey = localStorage.getItem('customGroqKey');
+            const lastTabState = localStorage.getItem('tabState');
+            const isWideMode = localStorage.getItem('wideMode') === 'true';
+
+            if (lastUrl) document.getElementById('url').value = lastUrl;
+            if (lastFields) document.getElementById('fields').value = lastFields;
+            if (lastApiChoice) {
+                const radio = document.querySelector(`input[name="apiKeyChoice"][value="${lastApiChoice}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    handleApiChoice(radio);
+                    if (lastApiChoice === 'custom' && lastCustomKey) {
+                        document.getElementById('custom_groq_api_key').value = lastCustomKey;
+                        document.getElementById('groq_api_key').value = lastCustomKey;
+                    }
+                }
+            }
+            if (lastTabState) {
+                const tab = document.querySelector(`.tab[data-tab="${lastTabState}"]`);
+                if (tab) {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${lastTabState}-tab`).classList.add('active');
+                    updateTabSlider();
+                }
+            }
+            if (typeof isWideMode !== 'undefined') {
+                document.getElementById('wideMode').checked = isWideMode;
+                document.querySelector('.container').classList.toggle('wide', isWideMode);
+            }
+        }
+
+        // Add event listeners to cache form changes
+        document.getElementById('url')?.addEventListener('input', cacheFormData);
+        document.getElementById('fields')?.addEventListener('input', cacheFormData);
+        document.getElementById('wideMode')?.addEventListener('change', cacheFormData);
+        document.getElementById('custom_groq_api_key')?.addEventListener('input', cacheFormData);
+        document.querySelectorAll('input[name="apiKeyChoice"]').forEach(radio => {
+            radio.addEventListener('change', cacheFormData);
+        });
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', cacheFormData);
+        });
+
+        // Call restore on page load
+        window.addEventListener('load', restoreFormData);
+        function showError(error, message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorTitle = errorContainer.querySelector('.error-title');
+            const errorMessage = errorContainer.querySelector('.error-message');
+
+            errorTitle.textContent = error;
+            errorMessage.textContent = message;
+            errorContainer.style.display = 'flex';
+        }
+
+        // Add these new functions before the form event listener
+        function switchToCustomApi() {
+            // Switch to custom API tab
+            const customApiTab = document.querySelector('.api-tab[data-api="custom"]');
+            if (customApiTab) {
+                customApiTab.click();
+            }
+            // Hide popup
+            document.getElementById('trialEndedPopup').style.display = 'none';
+        }
+
+        function initializeApiUsage() {
+            if (!localStorage.getItem('apiUsageCount')) {
+                localStorage.setItem('apiUsageCount', '0');
+            }
+        }
+
+        function checkApiUsage() {
+            const isCustomApi = document.querySelector('.api-tab[data-api="custom"]').classList.contains('active');
+            if (!isCustomApi) {
+                const usageCount = parseInt(localStorage.getItem('apiUsageCount') || '0');
+                const pageCount = parseInt(document.getElementById('page_count').value) || 1;
+
+                // Calculate usage cost based on page count
+                let usageCost = 1;
+                if (pageCount >= 5) usageCost = 3;
+                else if (pageCount > 3) usageCost = 2;
+
+                if (usageCount >= 5) {
+                    document.getElementById('trialEndedPopup').style.display = 'flex';
+                    return false;
+                }
+
+                // Check if we have enough uses left
+                if (usageCount + usageCost > 5) {
+                    showError('Trial Usage Limit', `Scraping ${pageCount} pages requires ${usageCost} trial uses. You only have ${5 - usageCount} uses remaining.`);
+                    return false;
+                }
+
+                localStorage.setItem('apiUsageCount', (usageCount + usageCost).toString());
+            }
+            return true;
+        }
+
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeApiUsage);
+
+        // This is the new form submission event listener that replaces your existing one
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Check API usage first
+            if (!checkApiUsage()) {
+                return;
+            }
+
+            const formData = new FormData(form);
+            const isCustomApi = document.querySelector('.api-tab[data-api="custom"]').classList.contains('active');
+            const customApiKey = document.getElementById('custom_groq_api_key').value;
+
+            // Validate custom API key if custom API is selected
+            if (isCustomApi) {
+                // Check if API key is provided
+                if (!customApiKey || customApiKey.trim() === '') {
+                    showError('API Key Required', 'Please enter your Groq API key');
+                    return;
+                }
+
+                const cleanedApiKey = customApiKey.trim();
+
+                // Exact Groq API validation - must be gsk_ followed by 52 characters (total 56)
+                const groqKeyRegex = /^gsk_[A-Za-z0-9]{52}$/;
+
+                if (!groqKeyRegex.test(cleanedApiKey)) {
+                    showError('Invalid API Key', 'Invalid Groq API key format');
+                    return;
+                }
+
+                // Update the form data with cleaned API key
+                formData.set('groq_api_key', cleanedApiKey);
+            }
+
+            // Store ALL preferences before submit
+            localStorage.setItem('lastUrl', document.getElementById('url').value);
+            localStorage.setItem('lastFields', document.getElementById('fields').value);
+            localStorage.setItem('wideMode', document.getElementById('wideMode').checked);
+            localStorage.setItem('apiKeyChoice', isCustomApi ? 'custom' : 'default');
+            localStorage.setItem('customGroqKey', document.getElementById('custom_groq_api_key')?.value || '');
+            localStorage.setItem('activeTab', 'result');
+
+            // Show loading state
+            submitBtn.textContent = 'Scraping...';
+            loadingOverlay.style.display = 'flex';
+
+            // Disable inputs
+            inputs.forEach(input => {
+                input.disabled = true;
+                input.classList.add('disabled');
+            });
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Invalid API key or network error');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.documentElement.innerHTML = html;
+
+                // First restore the wide mode since it affects layout
+                const isWideMode = localStorage.getItem('wideMode') === 'true';
+                document.getElementById('wideMode').checked = isWideMode;
+                document.querySelector('.container')?.classList.toggle('wide', isWideMode);
+
+                // Initialize components
+                initializeApiTabs();
+                createWebBackground();
+
+                // Restore all cached values
+                const lastUrl = localStorage.getItem('lastUrl');
+                const lastFields = localStorage.getItem('lastFields');
+                if (lastUrl) document.getElementById('url').value = lastUrl;
+                if (lastFields) document.getElementById('fields').value = lastFields;
+
+                // Switch to result tab and update slider
+                const resultTab = document.querySelector('.tab[data-tab="result"]');
+                if (resultTab) {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    resultTab.classList.add('active');
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById('result-tab').classList.add('active');
+                }
+
+                // Important: Wait for layout to settle before updating slider
+                requestAnimationFrame(() => {
+                    updateTabSlider();
+                });
+
+                // Re-run any remaining inline scripts
+                const scripts = Array.from(document.getElementsByTagName('script'));
+                scripts.forEach(script => {
+                    if (!script.src) {
+                        eval(script.innerHTML);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('API Error', isCustomApi ? 'Invalid API key or API error. Please check your API key and try again.' : 'Failed to scrape the website. Please try again.');
+                submitBtn.textContent = 'Scrape';
+                loadingOverlay.style.display = 'none';
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.classList.remove('disabled');
+                });
+            });
+        });
+
+
+        // Wide Mode Toggle functionality
+        const wideModeToggle = document.getElementById('wideMode');
+        const container = document.querySelector('.container');
+
+        wideModeToggle.addEventListener('change', function() {
+            container.classList.toggle('wide', this.checked);
+            localStorage.setItem('wideMode', this.checked);
+
+            // Reduced delay and added requestAnimationFrame for smoother transition
+            requestAnimationFrame(() => {
+                setTimeout(updateTabSlider, 150); // Reduced from 300ms to 150ms
+            });
+        });
+
+        // Prevent form resubmission
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Reset UI state after load
+        window.addEventListener('load', function() {
+            // Reset loading state
+            submitBtn.textContent = 'Scrape';
+            loadingOverlay.style.display = 'none';
+
+            // Enable inputs
+            inputs.forEach(input => {
+                input.disabled = false;
+                input.classList.remove('disabled');
+            });
+        });
+    </script>
+
+    <div class="popup-overlay" id="trialEndedPopup">
+        <div class="popup-content">
+            <div class="popup-title">Free Trial Ended</div>
+            <div class="popup-message">
+                You've used all 5 free attempts with the default API key. To continue using UnScraper, please use your own Groq API key.
+                <br><br>
+                You can get a Groq API key by signing up for free at <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+            </div>
+            <button class="popup-button" onclick="switchToCustomApi()">Switch to Custom API</button>
+        </div>
+    </div>
+</body>
+</html>
