@@ -1,8 +1,6 @@
 # scraper_app/powerbi.py
 import pandas as pd
 import pygwalker as pyg
-import streamlit.components.v1 as stc
-import streamlit as st
 import concurrent.futures
 from django.core.files.storage import FileSystemStorage
 import os
