@@ -1,25 +1,25 @@
-FROM mcr.microsoft.com/playwright/python:v1.40.0-focal
+# Use Node.js Playwright image as base
+FROM mcr.microsoft.com/playwright:v1.40.0-focal
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PORT=8000
+# Install Python
+RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Set work directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
+# Copy requirements first
 COPY requirements.txt .
+RUN pip3 install -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy project
+# Copy project files
 COPY . .
 
-# Collect static files and run migrations
-RUN python manage.py collectstatic --noinput
-RUN python manage.py migrate
+# Run migrations and collect static
+RUN python3 manage.py collectstatic --noinput
+RUN python3 manage.py migrate
 
-# Run gunicorn
-CMD gunicorn UnScraper_Django.wsgi:app --bind 0.0.0.0:$PORT
+# Expose port
+EXPOSE 8000
+
+# Start command
+CMD ["gunicorn", "UnScraper_Django.wsgi:app", "--bind", "0.0.0.0:8000"]
