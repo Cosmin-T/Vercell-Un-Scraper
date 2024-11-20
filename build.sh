@@ -12,6 +12,7 @@ apt-get update && apt-get install -y \
     libgles2-mesa \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip and install dependencies
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
@@ -19,8 +20,11 @@ pip install -r requirements.txt
 PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install
 python -m playwright install
 
+# Collect static files and run migrations
 python manage.py collectstatic --noinput
 python manage.py migrate
-if [[ $CREATE_SUPERUSER ]]
-then
-    python manage.py createsuperuser --no-input --email ⬤
+
+# Create superuser if the environment variable is set
+if [[ $CREATE_SUPERUSER ]]; then
+    python manage.py createsuperuser --no-input --email "$DJANGO_SUPERUSER_EMAIL"
+fi
