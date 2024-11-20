@@ -17,3 +17,5 @@ urllib3==2.2.3
 altair==4.2.2
 jsonschema==4.23.0
 ipywidgets==8.1.5
+gunicorn==21.2.0
+whitenoise==6.6.0
