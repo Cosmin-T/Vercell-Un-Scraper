@@ -6,7 +6,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 # Install Playwright and browsers
-PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install
 python -m playwright install
 
 python manage.py collectstatic --noinput
