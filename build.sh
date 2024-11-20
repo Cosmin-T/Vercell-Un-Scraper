@@ -5,10 +5,7 @@ set -o errexit
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# Install browser dependencies with sudo
-sudo playwright install-deps
-
-# Then install browser
+# Install Playwright and browsers
 PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright playwright install chromium
 python -m playwright install
 
