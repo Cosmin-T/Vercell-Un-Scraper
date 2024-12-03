@@ -245,11 +245,11 @@ def process_chunk(client: Groq, sys_message: str, chunk: str, fields: List[str])
     """ Process a chunk of text using Groq API" """
     # List of available LLM models
     llms = [
-        'llama-3.2-90b-text-preview',
         'llama-3.2-90b-vision-preview',
         'llama-3.1-70b-versatile',
         'llama3-70b-8192',
         'llama3-groq-70b-8192-tool-use-preview'
+        'llama-3.2-90b-text-preview',
     ]
 
     # Initialize model index and retry counter
@@ -310,6 +310,15 @@ def process_chunk(client: Groq, sys_message: str, chunk: str, fields: List[str])
                 }
                 current_model_index = (current_model_index + 1) % len(llms)
                 logger.info(f"Rate limit hit, switching to model {llms[current_model_index]}")
+            elif "400" in error_message or "bad request" in error_message:
+                logger.warning(f"Bad request error. Trying with next model. Details: {e}")
+                current_model_index = (current_model_index + 1) % len(llms)
+                retry_count += 1
+                error_details = {
+                    'error_type': 'bad_request',
+                    'message': 'Invalid request format. Trying with different model.'
+                }
+                continue
             elif "invalid_api_key" in error_message or "authentication" in error_message:
                 error_details = {
                     'error_type': 'invalid_api_key',
@@ -342,6 +351,8 @@ def process_chunk(client: Groq, sys_message: str, chunk: str, fields: List[str])
             raise ScraperError(f"Rate limit reached.{wait_msg} The API is processing too many requests.")
         elif '503' in str(e):
             raise ScraperError("Groq API is temporarily unavailable. Please try again in a few minutes.")
+        elif '400' in str(e):
+            raise ScraperError(f"Bad request error. Please check your input format. Details: {message}")
         else:
             raise ScraperError(f"API Error: {message}")
 
@@ -379,7 +390,7 @@ def parse_price_fields(data):
     price_fields = [field for field in rows[0].keys() if 'price' in field.lower()]
 
     # Compile a regex to match all known currencies
-    currency_regex = re.compile(r'(\$|€|£|¥|₹|₽|₺|₩|₪|₫|฿|₦|₴|؋|Ar|R|Br|лв|៛|₡|₲|₵|Kč|kr|£|Q|Ft|Rp|﷼|J\$|₭|ден|₮|MT|₦|C\$|P|S/|₨|₱|zł|lei|руб|RSD|₸|₭|DB|Bs|TSh|₸|₾|USD|EUR|GBP|JPY|AUD|CAD|CNY|INR|RUB|TRY|KRW|ILS|VND|THB|NGN|BRL|ZAR|HKD|SGD|MYR|MXN|PHP|PLN|IDR|SAR|EGP|CHF|NOK|SEK|NZD|DKK|AED|KWD|ARS|COP|PEN|CLP|UAH|GHS|AOA|BHD|BWP|GIP|LKR|MVR|MUR|NAD|PGK|TOP|UYU|WST|YER|AFN|ALL|DZD|AOA|XCD|AMD|AWG|AZN|BSD|BHD|BDT|BBD|BYN|BZD|BMD|BOB|BAM|BWP|BND|BGN|BIF|CVE|KHR|XAF|XPF|KYD|KMF|XAF|CLF|KPW|CRC|CUP|DOP|DJF|XCD|ERN|SZL|ETB|FJD|GMD|XAU|XAG|XPT|XPD|GYD|HTG|HUF|IRR|IQD|ISK|JOD|KZT|KGS|LAK|LBP|LSL|LRD|LYD|MGA|MKD|MMK|MNT|MAD|MZN|NIO|OMR|PKR|PYG|QAR|RON|RWF|STD|SCR|SLL|SBD|SOS|SSP|SDG|SRD|SYP|TJS|TMT|TND|UGX|UZS|VEF|VUV|XOF|ZMW|ZWL)', re.IGNORECASE)
+    currency_regex = re.compile(r'(\$|€|£|¥|₹|₽|₺|₩|₪|₫|฿|₦|₴|؋|Ar|R|Br|лв|៛|₡|₲|₵|Kč|kr|£|Q|Ft|Rp|﷼|J\$|₭|ден|₮|MT|₦|C\$|P|S/|₨|₱|zł|lei|Lei|руб|RSD|₸|₭|DB|Bs|TSh|₸|₾|USD|EUR|GBP|JPY|AUD|CAD|CNY|INR|RUB|TRY|KRW|ILS|VND|THB|NGN|BRL|ZAR|HKD|SGD|MYR|MXN|PHP|PLN|IDR|SAR|EGP|CHF|NOK|SEK|NZD|DKK|AED|KWD|ARS|COP|PEN|CLP|UAH|GHS|AOA|BHD|BWP|GIP|LKR|MVR|MUR|NAD|PGK|TOP|UYU|WST|YER|AFN|ALL|DZD|AOA|XCD|AMD|AWG|AZN|BSD|BHD|BDT|BBD|BYN|BZD|BMD|BOB|BAM|BWP|BND|BGN|BIF|CVE|KHR|XAF|XPF|KYD|KMF|XAF|CLF|KPW|CRC|CUP|DOP|DJF|XCD|ERN|SZL|ETB|FJD|GMD|XAU|XAG|XPT|XPD|GYD|HTG|HUF|IRR|IQD|ISK|JOD|KZT|KGS|LAK|LBP|LSL|LRD|LYD|MGA|MKD|MMK|MNT|MAD|MZN|NIO|OMR|PKR|PYG|QAR|RON|RWF|STD|SCR|SLL|SBD|SOS|SSP|SDG|SRD|SYP|TJS|TMT|TND|UGX|UZS|VEF|VUV|XOF|ZMW|ZWL)', re.IGNORECASE)
 
     # Parse and convert price fields
     for row in rows:
