@@ -246,7 +246,10 @@ def process_chunk(client: Groq, sys_message: str, chunk: str, fields: List[str])
     # List of available LLM models
     llms = [
         'llama-3.2-90b-vision-preview',
+        'deepseek-r1-distill-llama-70b',
+        'llama-3.3-70b-versatile'
         'llama-3.1-70b-versatile',
+        'llama-3.3-70b-specdec',
         'llama3-70b-8192',
         'llama3-groq-70b-8192-tool-use-preview'
         'llama-3.2-90b-text-preview',
